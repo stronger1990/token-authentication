@@ -16,8 +16,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import redis.clients.jedis.Jedis;
 
-import java.util.List;
-
 /**
  * @author Think
  * @Title: welocome
@@ -26,9 +24,9 @@ import java.util.List;
  * @date 2019/1/1815:41
  */
 @RestController
-public class welcome {
+public class LoginController {
 
-    Logger logger = LoggerFactory.getLogger(welcome.class);
+    Logger logger = LoggerFactory.getLogger(LoginController.class);
 
     @Autowired
     Md5TokenGenerator tokenGenerator;
@@ -38,10 +36,8 @@ public class welcome {
 
     @GetMapping("/welcome")
     public String welcome(){
-
         return "welcome token authentication";
     }
-
 
     @RequestMapping(value = "/login", method = RequestMethod.GET)
     public ResponseTemplate login(String username, String password) {
@@ -55,7 +51,7 @@ public class welcome {
         JSONObject result = new JSONObject();
         if (user != null) {
 
-            Jedis jedis = new Jedis("192.168.1.106", 6379);
+            Jedis jedis = new Jedis("127.0.0.1", 6379);
             String token = tokenGenerator.generate(username, password);
             jedis.set(username, token);
             //设置key生存时间，当key过期时，它会被自动删除，时间是秒
@@ -85,9 +81,7 @@ public class welcome {
     @RequestMapping(value = "test", method = RequestMethod.GET)
     @AuthToken
     public ResponseTemplate test() {
-
         logger.info("已进入test路径");
-
         return ResponseTemplate.builder()
                 .code(200)
                 .message("Success")

@@ -50,12 +50,11 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
 
         // 如果打上了AuthToken注解则需要验证token
         if (method.getAnnotation(AuthToken.class) != null || handlerMethod.getBeanType().getAnnotation(AuthToken.class) != null) {
-
-//            String token = request.getHeader(httpHeaderName);
-            String token = request.getParameter(httpHeaderName);
+            String token = request.getHeader(httpHeaderName);
+            // String token = request.getParameter(httpHeaderName);
             log.info("Get token from request is {} ", token);
             String username = "";
-            Jedis jedis = new Jedis("192.168.1.106", 6379);
+            Jedis jedis = new Jedis("127.0.0.1", 6379);
             if (token != null && token.length() != 0) {
                 username = jedis.get(token);
                 log.info("Get username from Redis is {}", username);
@@ -81,33 +80,47 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                 return true;
             } else {
                 JSONObject jsonObject = new JSONObject();
-
                 PrintWriter out = null;
                 try {
-                    response.setStatus(unauthorizedErrorCode);
+                    log.info("Token是正确的，但是根据Token在Redis找不到username");
+                    //response.setStatus(unauthorizedErrorCode);
+                    response.setStatus(200);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 
-                    jsonObject.put("code", ((HttpServletResponse) response).getStatus());
-                    jsonObject.put("message", HttpStatus.UNAUTHORIZED);
+                    // jsonObject.put("code", ((HttpServletResponse) response).getStatus());
+                    jsonObject.put("code", 401);
+                    jsonObject.put("message", HttpStatus.UNAUTHORIZED + "  不合法用户");
+
+                    response.setCharacterEncoding("utf-8");
                     out = response.getWriter();
                     out.println(jsonObject);
 
+
+                    // 上面本来是写：
+                    // response.setStatus(unauthorizedErrorCode);
+                    // jsonObject.put("code", ((HttpServletResponse) response).getStatus());
+                    // 客户端拿不到response，只拿到Http code = 401，而一般客户端的http success回调一般都固定http code=200。
+                    // 这个时候客户端只能从最原始的result判断http code是401就约定显示什么，这样不太统一。
+                    // 如果是Tomcat的问题导致http code不为200这么没办法，但是如果Tomcat服务器配置正常运行正常，就代表已经进入业务系统了，理论上http code=200了。
+                    // 所以要写成：
+                    // response.setStatus(200);
+                    // jsonObject.put("code", 401);
+                    // 表示业务系统已经正常返回，但是因为登录用户不满足某些条件，所以返回401以及message，请根据message信息作出修改。
+
                     return false;
                 } catch (Exception e) {
+                    log.info("异常：", e);
                     e.printStackTrace();
+                    return false;
                 } finally {
                     if (null != out) {
                         out.flush();
                         out.close();
                     }
                 }
-
             }
-
         }
-
         request.setAttribute(REQUEST_CURRENT_KEY, null);
-
         return true;
     }
 

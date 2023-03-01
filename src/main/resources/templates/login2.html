@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>登录测试</title>
+    <script src="js/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+
+<style type="text/css">
+    #div_bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #fff;
+        background-repeat: no-repeat;
+        background-size: cover;
+        -webkit-background-size: cover;
+        -o-background-size: cover;
+        background-position: center 0;
+        background-attachment: fixed; /*全屏居中的关键*/
+    }
+</style>
+
+<script type="text/javascript">
+    function postJson() {
+        console.log('执行了postJson函数');
+        $.ajax({
+            url: 'http://localhost:8124/login',
+            type: 'POST',
+            data: '{"username":"strong", "password":"123456"}',
+            contentType: 'application/json',
+            success: function (data) {
+                alert(data.message);
+            }
+        });
+    }
+
+    var loginToken;
+    function getLogin() {
+        console.log('执行了getLogin函数');
+        $.ajax({
+            url: 'http://localhost:8124/login?username=strong&password=123456',
+            type: 'GET',
+            success: function (data) {
+                //alert(data.data.token);
+                loginToken = data.data.token;
+                alert(loginToken);
+            }
+        });
+    }
+
+    function getByToken() {
+        console.log('执行了getByToken函数');
+        $.ajax({
+            url: 'http://localhost:8124/test',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': loginToken
+            },
+            type: 'GET',
+            success: function (data) {
+                alert(data.message);
+            }
+        });
+    }
+</script>
+
+
+<div id="div_bg">
+    <button onclick="postJson()">测试JSON登录</button>
+    <br/>
+    <br/>
+    <button onclick="getLogin()">测试表单登录</button>
+    <br/>
+    <br/>
+    <button onclick="getByToken()">携带token访问接口</button>
+</div>
+
+</body>
+</html>
